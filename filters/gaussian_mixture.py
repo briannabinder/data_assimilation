@@ -1,5 +1,8 @@
 import numpy as np
+import multiprocessing
 from .base_filter import BaseEnsembleFilter
+from scipy.spatial.distance import cdist
+from scipy.special import softmax
 
 class GaussianMixture(BaseEnsembleFilter):
   
@@ -32,61 +35,15 @@ class GaussianMixture(BaseEnsembleFilter):
 
         return self.updated_states
 
-
-    # def __init__(self, pred_states, pred_obs, real_obs, sigmas, gammas):
-    #     self.pred_states = pred_states
-    #     self.pred_obs = pred_obs
-    #     self.real_obs = real_obs
-
-    #     N_tsteps = len(sigmas)
-    #     self.N_particles = len(pred_states)
-
-    #     self.sigma_y = 2
-
-    #     # * * * 
-
-    #     print("UPDATING STATE")
-
-    #     self.update_states = np.random.normal(0, sigmas[-1], pred_states.shape)
-
-    #     for t in range(N_tsteps-2, -1, -1):
-            
-    #         sigma_x = sigmas[t]
-    #         gamma = gammas[t]
-
-    #         weight_matrix = self.get_weight_matrix(sigma_x)
-
-    #         for i in range(self.N_particles):
-
-    #             weights = weight_matrix[i]
-    #             score = np.sum(weights[:, np.newaxis] * (pred_states - self.update_states[i]) / sigma_x**2, axis=0)
-
-    #             self.update_states[i] = self.update_states[i] + (gamma / (2 * N_tsteps)) * score
-
-
     def get_weight_matrix(self, sigma_x):
+
+        # Fast multiple method
 
         weight_matrix = np.zeros((self.N_particles, self.N_particles))
 
-        for i in range(self.N_particles):
+        obs_terms = cdist(self.predicted_obs, self.actual_obs.reshape(1, -1), metric='sqeuclidean').flatten() / (2 * self.sigma_y**2)
+        state_terms = cdist(self.updated_states, self.predicted_states, metric='sqeuclidean') / (2 * sigma_x**2)
 
-            updated_state = self.updated_states[i]
+        weight_matrix = -(state_terms + obs_terms[None, :])
 
-            for j in range(self.N_particles):
-
-                pred_state = self.predicted_states[j]
-                pred_ob = self.predicted_obs[j]
-
-                # TODO: cdist or pdist
-                state_term = -np.dot(updated_state - pred_state, updated_state - pred_state) / (2 * sigma_x**2)
-                ob_term = -np.dot(self.actual_obs - pred_ob, self.actual_obs - pred_ob) / (2 * self.sigma_y**2)
-
-                weight_matrix[i][j] = np.exp(state_term + ob_term)
-
-                # print(f"({i}, {j}): {state_term}")
-
-        row_sums = weight_matrix.sum(axis=1, keepdims=True)
-
-        # print(f"sigma_x = {sigma_x}: {row_sums}")
-
-        return weight_matrix / row_sums
+        return softmax(weight_matrix, axis=1)
