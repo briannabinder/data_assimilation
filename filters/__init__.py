@@ -1,3 +1,3 @@
-
-from .base_filter import BaseEnsembleFilter
-from .gaussian_mixture import GaussianMixture
+# filters/__init__.py
+from .base_filter import BaseFilter
+from .kde import KernelDensityEstimation
