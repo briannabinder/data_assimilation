@@ -1,9 +1,10 @@
 from filters import BaseFilter
 import numpy as np
-from scipy.spatial.distance import cdist
+from scipy.spatial.distance import cdist, pdist
 from scipy.special import softmax
 
 class KernelDensityEstimation(BaseFilter):
+
     def __init__(self, sigma_config, sigma_scale, obs_op, random_sd, N_tsteps=500):
 
         self.N_tsteps = N_tsteps # Number of pseudo-time
@@ -16,7 +17,7 @@ class KernelDensityEstimation(BaseFilter):
     def __str__(self):
         return "KDE"
     
-    def update(self, predicted_states, observation):
+    def update(self, predicted_states, observation, logger=None):
 
         self.predicted_states = predicted_states
         self.N_particles = len(predicted_states)
@@ -29,12 +30,21 @@ class KernelDensityEstimation(BaseFilter):
         if bw_method == "manual":
 
             # Obtain parameter values
-            sigma_start = self.sigma_config.get("sigma_start")
-            sigma_end = self.sigma_config.get("sigma_end")
-            sigma_obs = self.sigma_config.get("sigma_obs")
+            sigma_min_x = self.sigma_config.get("sigma_min_x")
+
+            if sigma_min_x == "min_dist":
+                distances = pdist(self.predicted_states, metric='euclidean')
+                sigma_min_x = np.min(distances)
+                if logger != None: logger.debug(f"sigma_x min (min dist) = {sigma_min_x}")
+
+            sigma_max_x = self.sigma_config.get("sigma_max_x")
+            sigma_y = self.sigma_config.get("sigma_y")
             # print(self.sigma_obs)
-            if sigma_start is None and sigma_end is None:
+            if sigma_min_x is None and sigma_y is None:
                 raise ValueError("For 'manual', 'sigma_start', 'sigma_end', and 'sigma_obs' are required parameters.")
+            
+            distances = pdist(self.predicted_states, metric='euclidean')
+            # print(np.min(distances))
             
             # sigmas = np.linspace(sigma_start, sigma_end, self.N_tsteps)
             # sigmas = np.logspace(np.log10(sigma_start), np.log10(sigma_end), self.N_tsteps)
@@ -57,11 +67,11 @@ class KernelDensityEstimation(BaseFilter):
             raise ValueError("Invalid bandwidth method. Supported methods are 'manual' and 'silverman'.")
 
         if self.sigma_scale == "linear":
-            sigmas = np.linspace(sigma_start, sigma_end, self.N_tsteps)
+            sigmas = np.linspace(sigma_min_x, sigma_max_x, self.N_tsteps)
             taus = np.linspace(0, 1, self.N_tsteps)
 
-        elif self.sigma_scale == "log":
-            sigmas = np.logspace(np.log10(sigma_start), np.log10(sigma_end), self.N_tsteps)
+        elif self.sigma_scale == "log": # TODO fix
+            sigmas = np.logspace(np.log10(sigma_min_x), np.log10(sigma_max_x), self.N_tsteps)
             taus = np.logspace(0, 1, self.N_tsteps, base=10)
 
         # Determine the gamma values TODO might be different for logspace...
@@ -69,15 +79,10 @@ class KernelDensityEstimation(BaseFilter):
         dtau = taus[1] - taus[0]  # Time step (assuming uniform spacing)
         dsigma_dtau = np.gradient(sigmas, dtau)
         gammas = 2 * sigmas * dsigma_dtau
-        # print(taus)
-        # dtau = np.gradient(taus)
-        # print(aus[1] - taus[0])
-        # dsigma_dtau = np.gradient(sigmas, dtau)
-        # gammas = 2 * sigmas * dsigma_dtau
 
         self.updated_states = np.random.normal(0, sigmas[-1], predicted_states.shape)
 
-        obs_terms = cdist(predicted_obs, observation.reshape(1, -1), metric='sqeuclidean').flatten() / (2 * sigma_obs**2)
+        obs_terms = cdist(predicted_obs, observation.reshape(1, -1), metric='sqeuclidean').flatten() / (2 * sigma_y**2)
 
         for t in range(self.N_tsteps-2, -1, -1):
             
@@ -99,11 +104,8 @@ class KernelDensityEstimation(BaseFilter):
 
         weight_matrix = np.zeros((self.N_particles, self.N_particles))
 
-        # print(self.observation.reshape(1, -1))
-
-        # obs_terms = cdist(self.predicted_obs, self.observation.reshape(1, -1), metric='sqeuclidean').flatten() / (2 * self.sigma_obs**2)
         state_terms = cdist(self.updated_states, self.predicted_states, metric='sqeuclidean') / (2 * sigma_pred**2)
-        # print(state_terms)
+
         weight_matrix = -(state_terms + obs_terms[None, :])
 
         return softmax(weight_matrix, axis=1)

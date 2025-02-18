@@ -18,7 +18,7 @@ def run_data_assimilation(model, filter):
 
     # Run Data Assimilation
     # for step in range(model.T_steps):
-    for step in tqdm(range(model.T_steps), desc=f"Data Assimilation (Ensemble Size={model.ensemble_size})", unit="step"):
+    for step in tqdm(range(model.T_steps), desc=f"DA (M={model.ensemble_size}, \u03C3_x={filter.sigma_config['sigma_min_x']}, \u03C3_y={filter.sigma_config['sigma_y']})", unit="step"):
     
         # Prediction Step
         logger.info(f"PREDICT (step={step + 1})")
@@ -34,7 +34,7 @@ def run_data_assimilation(model, filter):
         observation = model.observations[step]
         logger.debug(f"Observation: {observation}")
 
-        updated_states = filter.update(predicted_states, observation)
+        updated_states = filter.update(predicted_states, observation, logger)
 
         model.add_update(updated_states)
 

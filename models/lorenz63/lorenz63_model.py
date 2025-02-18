@@ -2,8 +2,6 @@ from models import BaseModel
 import numpy as np
 from scipy.integrate import solve_ivp
 
-# TODO: External observation operators
-
 class Lorenz63(BaseModel):
 
     def __init__(self, 
@@ -37,6 +35,7 @@ class Lorenz63(BaseModel):
         self.initial_ensemble = initial_ensemble # Can be given or not
         self.initial_time = initial_time # If not given set to 0 
 
+        # TODO: Put in Parent class???
         self.predicted_states = [initial_ensemble]
         self.updated_states = [initial_ensemble]
         self.times = [initial_time]
@@ -101,10 +100,12 @@ class Lorenz63(BaseModel):
         self.mean_predictions = np.mean(self.predicted_states, axis=1)
         self.mean_updates = np.mean(self.updated_states, axis=1)
         self.std_predictions = np.std(self.predicted_states, axis=1)
+        self.std_updates = np.std(self.updated_states, axis=1)
 
         num_steps = self.T_steps - self.T_burnin
 
         self.rmses = np.linalg.norm(self.mean_predictions[-num_steps:] - self.reference_states[-num_steps:], axis=1) / np.sqrt(3)
+        self.obs_rmses = np.linalg.norm(self.observations[-num_steps:] - self.reference_states[-num_steps:], axis=1) / np.sqrt(3)
 
     def _generate_data(self):
 
