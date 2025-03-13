@@ -1,215 +1,473 @@
+import os
+import numpy as np
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
 from ipywidgets import interact
 from IPython.display import display
-import os
-import numpy as np
 
-def plot_particles(particle_data):
+def plot_particles(models):
+    """
+    Plots ensemble particle behavior interactively with widgets.
+    """
+    ensemble_sizes, sigma_min_xs, sigma_ys = get_kde_keys(models["KDE VE"])
+    default_ensemble = ensemble_sizes[0]
+    default_sigma_x = sigma_min_xs[0]
+    default_sigma_y = sigma_ys[0]
 
-    X = 0
-    Y = 1
-    Z = 2
+    # Set the initial model for time limits
+    model = models["KDE VE"][(default_ensemble, default_sigma_x, default_sigma_y)]
+    t_min_start = (model.T_spinup + model.T_burnin) * model.obs_dt
+    t_min_end = model.times[-1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))  # Create two subplots (XY and XZ)
+    fig = None  # Global figure for saving
 
-    fig.suptitle(f"Particle Behavior")
-    
-    for label, data in particle_data.item():
-        # Extract required attributes
-        particles = data["particles"]
-        color = data.get("color", "black")
+    # time goes from 400 -> 599.9
+    def plot(time, ensemble_size, sigma_min_x, sigma_y, kde_type):
+        """Generates scatter plots for particle behavior."""
+        nonlocal fig
 
-        # Extract optional attributes with defaults
-        alpha = data.get("alpha", 1)  # Default transparency
-        size = data.get("size", 50)  # Default marker size
-        marker = data.get("marker", "o")  # Default marker shape
+        model = models[kde_type][(ensemble_size, sigma_min_x, sigma_y)]
+        enkf_model = models["EnKF"][ensemble_size]
 
-        if particles.shape[0] == 1:
-            ax1.scatter(particles[X], particles[Y], c=color, s=size, alpha=alpha, marker=marker, label=label)
-            ax2.scatter(particles[X], particles[Z], c=color, s=size, alpha=alpha, marker=marker, label=label)
-        else:
-            ax1.scatter(particles[:, X], particles[:, Y], c=color, s=size, alpha=alpha, marker=marker, label=label)
-            ax2.scatter(particles[:, X], particles[:, Z], c=color, s=size, alpha=alpha, marker=marker, label=label)
+        # print(model.reference_states.shape)
+        # Extract relevant data
+        reference = model.reference_states # t (4001) x dim (3)
+        observation = model.observations # # t (4000) x dim (3)
+        predicted_states = model.predicted_states # t (4001) x M x dim (3) 
+        updated_states = model.updated_states # t (4001) x M x dim (3)
+        updated_means = model.mean_updates # t (4001) x dim (3) 
 
-        ax1.set_xlabel("X")
-        ax1.set_ylabel("Y")
-        ax1.grid(alpha=0.2)
+        enkf_reference = enkf_model.reference_states # t (4001) x dim (3)
+        enkf_observation = enkf_model.observations # # t (4000) x dim (3)
+        enkf_predicted_states = enkf_model.predicted_states # t (4001) x M x dim (3) 
+        enkf_updated_states = enkf_model.updated_states # t (4001) x M x dim (3)
+        enkf_updated_means = enkf_model.mean_updates # t (4001) x dim (3)
 
-        ax2.set_xlabel("X")
-        ax2.set_ylabel("Z")
-        ax2.grid(alpha=0.2)
+        time_idx = int(np.where(np.abs(model.times - time) <= 0.05)[0])
 
-        plt.legend()
-        plt.tight_layout()
-        plt.show() 
+        # STYLE
+        input_clr = 'cornflowerblue'
+        pred_clr = 'lime'
+        upd_clr = 'gold'
 
-# Plots Lorenz63
-def plot_lorenz63(models, filter):
+        particle_size = 10
+        ref_size = 20
 
-    def timeplot(t_min, ensemble_size, sigma_min_x, sigma_y):
+        ref_marker = '*'
+        obs_marker = 'x'
 
-        # Select the model for the current ensemble size
-        model = models[(ensemble_size, sigma_min_x, sigma_y)]
+        # PLOTS
+        X, Y, Z = 0, 1, 2
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 10), dpi=300, sharex=True, sharey=True)
+        fig.suptitle(f"Particle Behavior at t={time}")
+
+        ax1.scatter(updated_states[time_idx - 1, :, X], updated_states[time_idx - 1, :, Y], c=input_clr, s=particle_size, alpha=0.7, label=f"Input States")
+        ax1.scatter(predicted_states[time_idx, :, X], predicted_states[time_idx, :, Y], c=pred_clr, s=particle_size, alpha=0.7, label=f"Predicted States")
+        ax1.scatter(updated_states[time_idx, :, X], updated_states[time_idx, :, Y], c=upd_clr, s=particle_size, alpha=0.7, label=f"Updated States")
+        ax1.scatter(updated_means[time_idx][X], updated_means[time_idx][Y], c='red', s=ref_size, label=f"Updated State Mean")
+        ax1.scatter(reference[time_idx][X], reference[time_idx][Y], c='blue', marker=ref_marker, s=ref_size, label=f"Reference")
+        ax1.scatter(observation[time_idx - 1][X], observation[time_idx - 1][Y], c='black', marker=obs_marker, s=ref_size, label=f"Observation")
         
+        ax2.scatter(updated_states[time_idx - 1, :, X], updated_states[time_idx - 1, :, Z], c=input_clr, s=particle_size, alpha=0.7, label=f"Input States")
+        ax2.scatter(predicted_states[time_idx, :, X], predicted_states[time_idx, :, Z], c=pred_clr, s=particle_size, alpha=0.7, label=f"Predicted States")
+        ax2.scatter(updated_states[time_idx, :, X], updated_states[time_idx, :, Z], c=upd_clr, s=particle_size, alpha=0.7, label=f"Updated States")
+        ax2.scatter(updated_means[time_idx][X], updated_means[time_idx][Z], c='red', s=ref_size, label=f"Updated State Mean")
+        ax2.scatter(reference[time_idx][X], reference[time_idx][Z], c='blue', marker=ref_marker, s=ref_size, label=f"Reference")
+        ax2.scatter(observation[time_idx - 1][X], observation[time_idx - 1][Z], c='black', marker=obs_marker, s=ref_size, label=f"Observation")
+        
+        ax3.scatter(enkf_updated_states[time_idx - 1, :, X], enkf_updated_states[time_idx - 1, :, Y], c=input_clr, s=particle_size, alpha=0.7, label=f"Input States")
+        ax3.scatter(enkf_predicted_states[time_idx, :, X], enkf_predicted_states[time_idx, :, Y], c=pred_clr, s=particle_size, alpha=0.7, label=f"Predicted States")
+        ax3.scatter(enkf_updated_states[time_idx, :, X], enkf_updated_states[time_idx, :, Y], c=upd_clr, s=particle_size, alpha=0.7, label=f"Updated States")
+        ax3.scatter(enkf_updated_means[time_idx][X], enkf_updated_means[time_idx][Y], c='red', s=ref_size, label=f"Updated State Mean")
+        ax3.scatter(enkf_reference[time_idx][X], enkf_reference[time_idx][Y], c='blue', marker=ref_marker, s=ref_size, label=f"Reference")
+        ax3.scatter(enkf_observation[time_idx - 1][X], enkf_observation[time_idx - 1][Y], c='black', marker=obs_marker, s=ref_size, label=f"Observation")
+        
+        ax4.scatter(enkf_updated_states[time_idx - 1, :, X], enkf_updated_states[time_idx - 1, :, Z], c=input_clr, s=particle_size, alpha=0.7, label=f"Input States")
+        ax4.scatter(enkf_predicted_states[time_idx, :, X], enkf_predicted_states[time_idx, :, Z], c=pred_clr, s=particle_size, alpha=0.7, label=f"Predicted States")
+        ax4.scatter(enkf_updated_states[time_idx, :, X], enkf_updated_states[time_idx, :, Z], c=upd_clr, s=particle_size, alpha=0.7, label=f"Updated States")
+        ax4.scatter(enkf_updated_means[time_idx][X], enkf_updated_means[time_idx][Z], c='red', s=ref_size, label=f"Updated State Mean")
+        ax4.scatter(enkf_reference[time_idx][X], enkf_reference[time_idx][Z], c='blue', marker=ref_marker, s=ref_size, label=f"Reference")
+        ax4.scatter(enkf_observation[time_idx - 1][X], enkf_observation[time_idx - 1][Z], c='black', marker=obs_marker, s=ref_size, label=f"Observation")
+
+        ax1.set_xlabel("X", fontweight='bold')
+        ax1.set_ylabel("Y", fontweight='bold')
+        ax1.grid(alpha=0.2)
+        # ax1.legend()
+        
+        ax2.set_xlabel("X", fontweight='bold')
+        ax2.set_ylabel("Z", fontweight='bold')
+        ax2.grid(alpha=0.2)
+        # ax2.legend()
+
+        ax3.set_xlabel("X", fontweight='bold')
+        ax3.set_ylabel("Y", fontweight='bold')
+        ax3.set_title("EnKF")
+        ax3.grid(alpha=0.2)
+        # ax3.legend()
+        
+        ax4.set_xlabel("X", fontweight='bold')
+        ax4.set_ylabel("Z", fontweight='bold')
+        ax4.set_title("EnKF")
+        ax4.grid(alpha=0.2)
+        ax4.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+    def save_plot(_):
+        """Saves the current plot to 'data/particleplots'."""
+        if fig is None:
+            print("No plot available to save.")
+            return
+
+        save_dir = "data/particles"
+        os.makedirs(save_dir, exist_ok=True)
+
+        filename = f"L63_{kde_type_widget.value}_M{ensemble_size_widget.value}_SX{sigma_min_x_widget.value}_SY{sigma_y_widget.value}.png"
+        filepath = os.path.join(save_dir, filename)
+
+        fig.savefig(filepath, dpi=300, bbox_inches='tight')
+        print(f"Plot saved to {filepath}")
+
+    # Interactive widgets
+    time_widget = widgets.FloatSlider(min=t_min_start, max=t_min_end, step=5, value=t_min_start, description="Start Time")
+    ensemble_size_widget = widgets.Dropdown(options=ensemble_sizes, value=default_ensemble, description="Ensemble")
+    sigma_min_x_widget = widgets.Dropdown(options=sigma_min_xs, value=default_sigma_x, description="\u03C3_x")
+    sigma_y_widget = widgets.Dropdown(options=sigma_ys, value=default_sigma_y, description="\u03C3_y")
+    kde_type_widget = widgets.Dropdown(options=["KDE VE", "KDE VP"], value="KDE VE", description="KDE Type")
+    save_button = widgets.Button(description="Save Plot", button_style='success')
+    save_button.on_click(save_plot)
+
+    # Display widgets
+    interact(
+        plot,
+        time=time_widget,
+        ensemble_size=ensemble_size_widget,
+        sigma_min_x=sigma_min_x_widget,
+        sigma_y=sigma_y_widget,
+        kde_type=kde_type_widget
+    )
+    
+    display(save_button)
+
+
+
+def plot_timeplots(models):
+    """
+    Plots time series of reference states, observations, predictions, and updates for a selected model.
+    
+    Args:
+        models (dict): Dictionary containing trained models, with keys as (ensemble_size, sigma_min_x, sigma_y).
+
+    Provides an interactive widget to select parameters and toggle EnKF positions.
+    """
+
+    # Extract available ensemble sizes, sigma_min_x values, and sigma_y values
+    ensemble_sizes, sigma_min_xs, sigma_ys = get_kde_keys(models["KDE VE"])  # Use VE for structure
+    default_ensemble = ensemble_sizes[0]
+    default_sigma_x = sigma_min_xs[0]
+    default_sigma_y = sigma_ys[0]
+
+    # Set the initial model for time limits
+    model = models["KDE VE"][(default_ensemble, default_sigma_x, default_sigma_y)]
+    t_min_start = model.reference_times[0]
+    t_min_end = model.reference_times[-1] - 5
+    t_default = (model.T_spinup + model.T_burnin) * model.obs_dt
+
+    fig, axes = None, None  # Global figure and axes for saving
+
+    def plot(t_min, ensemble_size, sigma_min_x, sigma_y, kde_type, show_enkf):
+        """
+        Inner function to generate and display a time series plot for a selected model.
+        
+        Args:
+            t_min (float): Start time for the plot.
+            ensemble_size (int): Selected ensemble size.
+            sigma_min_x (float): Selected sigma_min_x value.
+            sigma_y (float): Selected sigma_y value.
+            kde_type (str): Either 'KDE VE' or 'KDE VP'.
+            show_enkf (bool): Whether to overlay EnKF positions.
+        """
+
+        nonlocal fig, axes  # Allow modification of global variables
+
+        # Select the appropriate model
+        model = models[kde_type][(ensemble_size, sigma_min_x, sigma_y)]
+
         # Define the variables to plot: x, y, z
         variables = ['x', 'y', 'z']
 
-        # Create a figure with 3 subplots, one for each variable (x, y, z)
+        # Create a figure with 3 subplots, one for each variable
         fig, axes = plt.subplots(3, 1, figsize=(10, 10), dpi=300, sharex=True, constrained_layout=True)
 
-        # Loop through each variable (x, y, z)
         for idx, var in enumerate(variables):
-
-            # Extract relevant data for the current variable
+            # Extract relevant data
             ref_data = model.reference_states[:, idx]
             obs_data = model.observations[:, idx]
             pred_data = model.mean_predictions[:, idx]
             update_data = model.mean_updates[:, idx]
-            std_pred = model.std_predictions[:, idx]
             std_upd = model.std_updates[:, idx]
 
-            # Dynamically determine the y-limits
+            # Set y-axis limits dynamically
             all_values = np.concatenate([ref_data, obs_data, pred_data, update_data])
             y_min, y_max = np.min(all_values), np.max(all_values)
-            margin = 0.1 * (y_max - y_min)  # Add 10% margin to y-limits
+            margin = 0.1 * (y_max - y_min)
             y_min -= margin
             y_max += margin
 
-            ax = axes[idx]  # Get the current axis for the variable
+            ax = axes[idx]
+            ax.plot(model.reference_times, ref_data, linewidth=1, label='Reference', color='blue')
+            ax.scatter(model.reference_times[1:], obs_data, s=10, c='Black', marker='x', zorder=2, label='Observations')
+            ax.scatter(model.times, pred_data, s=10, c='Red', zorder=2, label='Prediction mean')
+            ax.scatter(model.times, update_data, s=10, c='Green', zorder=2, label='Update mean')
+            ax.errorbar(model.times, update_data, yerr=std_upd, fmt='none', c="Grey", zorder=0, capsize=3)
 
-            # Only add labels once (for the shared legend)
+            # Overlay EnKF positions if checkbox is checked
+            if show_enkf and ensemble_size in models["EnKF"]:
+                enkf_model = models["EnKF"][ensemble_size]
+                enkf_data = enkf_model.mean_updates[:, idx]
+                ax.scatter(enkf_model.times, enkf_data, s=10, c='purple', zorder=3, label='EnKF Mean')
+
             if idx == 0:
-                # Add plot, scatter, and error bars for the first variable (reference, observations, prediction, etc.)
-                ax.plot(model.reference_times, ref_data, linewidth=1, label='Reference', color='blue')
-                ax.scatter(model.reference_times[1:], obs_data, s=10, c='Black', marker='x', zorder=2, label='Observations')
-                ax.scatter(model.times, pred_data, s=10, c='Red', zorder=2, label='Prediction mean')
-                ax.scatter(model.times, update_data, s=10, c='Green', zorder=2, label='Update mean')
-                # ax.errorbar(model.times, pred_data, yerr=std_pred, fmt='none', c="Grey", zorder=0, capsize=3)
-                ax.errorbar(model.times, update_data, yerr=std_upd, fmt='none', c="Grey", zorder=0, capsize=3)
                 ax.legend()
-            else:
-                # For subsequent variables, only plot without adding new labels
-                ax.plot(model.reference_times, ref_data, linewidth=1, color='blue')
-                ax.scatter(model.reference_times[1:], obs_data, s=10, c='Black', marker='x', zorder=2)
-                ax.scatter(model.times, pred_data, s=10, c='Red', zorder=2)
-                ax.scatter(model.times, update_data, s=10, c='Green', zorder=2)
-                # ax.errorbar(model.times, pred_data, yerr=std_pred, fmt='none', c="Grey", zorder=0, capsize=3)
-                ax.errorbar(model.times, update_data, yerr=std_upd, fmt='none', c="Grey", zorder=0, capsize=3)
 
-            # Set the y-axis label for each subplot
             ax.set_ylabel(f'{var}(t)')
             ax.set_ylim(y_min, y_max)
             ax.grid(alpha=0.4)
 
-        # Set the x-axis label only for the last subplot (shared x-axis)
         axes[-1].set_xlabel('Time (t)')
-
-        # Set the overall figure title
-        plt.suptitle(f"sigma_min_x = {sigma_min_x}, sigma_scale = {filter.sigma_scale}", fontsize=10, color="grey")
         plt.xlim(t_min, t_min + 5)
-        
-        # Display the plot
         plt.show()
 
-        # Define save function to store the plot as an image file
-        def save_plot(button):
+    def save_plot(_):
+        """
+        Saves the currently displayed plot to the 'data/timeplots' directory.
+        """
+        if fig is None:
+            print("No plot available to save.")
+            return
 
-            save_dir = "data/timeplots"  # Directory to save the plot
-            os.makedirs(save_dir, exist_ok=True)  # Ensure the directory exists
-            
-            filename = f"lorenz63_kde_M{ensemble_size}_sigma{sigma_min_x}_{filter.sigma_scale}.png"
-            filepath = os.path.join(save_dir, filename)
-            fig.savefig(filepath, dpi=300)  # Save the plot
-            print(f"Plot saved to {filepath}")
+        save_dir = "data/timeplots"
+        os.makedirs(save_dir, exist_ok=True)
 
-        # Create a save button widget
-        save_button = widgets.Button(description="Save Plot", button_style='success')
-        save_button.on_click(save_plot)  # Attach the save function to the button click
-        display(save_button)  # Display the save button
+        filename = f"L63_{kde_type_widget.value}_M{ensemble_size_widget.value}_SX{sigma_min_x_widget.value}_SY{sigma_y_widget.value}.png"
+        filepath = os.path.join(save_dir, filename)
 
-    # Get available ensemble sizes and set the default
-    ensemble_sizes = sorted(set(key[0] for key in models.keys()))
-    default_ensemble = ensemble_sizes[0]
-    sigma_min_xs = sorted(set(key[1] for key in models.keys()))
-    default_sigma_x = sigma_min_xs[0]
-    sigma_ys = sorted(set(key[2] for key in models.keys()))
-    default_sigma_y = sigma_ys[0]
+        fig.savefig(filepath, dpi=300, bbox_inches='tight')
+        print(f"Plot saved to {filepath}")
 
-    # Set time slider limits based on the reference times of the model
-    model = models[(default_ensemble, default_sigma_x, default_sigma_y)]
-    t_min_start = model.reference_times[0]
-    t_min_end = model.reference_times[-1] - 5
+    # Interactive widgets
+    t_min_widget = widgets.FloatSlider(min=t_min_start, max=t_min_end, step=5, value=t_default, description="Start Time")
+    ensemble_size_widget = widgets.Dropdown(options=ensemble_sizes, value=default_ensemble, description="Ensemble")
+    sigma_min_x_widget = widgets.Dropdown(options=sigma_min_xs, value=default_sigma_x, description="\u03C3_x")
+    sigma_y_widget = widgets.Dropdown(options=sigma_ys, value=default_sigma_y, description="\u03C3_y")
+    kde_type_widget = widgets.Dropdown(options=["KDE VE", "KDE VP"], value="KDE VE", description="KDE Type")
+    show_enkf_widget = widgets.Checkbox(value=False, description="Show EnKF Positions")
+    save_button = widgets.Button(description="Save Plot", button_style='success')
+    save_button.on_click(save_plot)
 
-    # Create interactive widgets with time slider and ensemble size dropdown
+    # Display widgets
     interact(
-        timeplot,
-        t_min=widgets.FloatSlider(min=t_min_start, max=t_min_end, step=5, value=t_min_start, description="Start Time"),
-        ensemble_size=widgets.Dropdown(options=ensemble_sizes, value=default_ensemble, description="Ensemble"),
-        sigma_min_x=widgets.Dropdown(options=sigma_min_xs, value=default_sigma_x, description="\u03C3_x"),
-        sigma_y=widgets.Dropdown(options=sigma_ys, value=default_sigma_y, description="\u03C3_y")
+        plot,
+        t_min=t_min_widget,
+        ensemble_size=ensemble_size_widget,
+        sigma_min_x=sigma_min_x_widget,
+        sigma_y=sigma_y_widget,
+        kde_type=kde_type_widget,
+        show_enkf=show_enkf_widget
     )
 
-def plot_rmses(models, filter):
+    display(save_button)
 
-    ensemble_sizes, sigma_min_xs, sigma_ys = get_keys(models)
+
+
+def plot_rmses(models):
+    """
+    Plots the average RMSE (Root Mean Square Error) for different ensemble sizes 
+    across three types of filters: EnKF, KDE VE, and KDE VP. The function creates 
+    an interactive plot where users can select different 
+    sigma_x and sigma_y values for KDE VE and KDE VP models.
+    
+    Args:
+        models (dict): Dictionary containing trained model results with RMSE values.
+    """
+
+    # Extract different filter models from dictionary
+    enkf_models = models["EnKF"]
+    kde_ve_models = models["KDE VE"]
+    kde_vp_models = models["KDE VP"]
+
+    # Get available ensemble sizes, sigma_min_x values, and sigma_y values from KDE models
+    ensemble_sizes, sigma_min_xs, sigma_ys = get_kde_keys(kde_ve_models)
+
+    # Default values for sigma_min_x and sigma_y (used for initial plot display)
     default_sigma_x = sigma_min_xs[0]
     default_sigma_y = sigma_ys[0]
 
     def plot(sigma_min_x, sigma_y):
+        """
+        Inner function to generate and display a scatter plot of RMSE vs. ensemble size.
+        
+        Args:
+            sigma_min_x (float): Selected sigma_min_x value.
+            sigma_y (float): Selected sigma_y value.
+        """
 
-        # Calculate the average RMSE for each ensemble size
-        avg_rmses = []
+        # Lists to store average RMSEs for each filter type
+        enkf_avg_rmses = []
+        kde_ve_avg_rmses = []
+        kde_vp_avg_rmses = []
+
+        # Compute average RMSE for each ensemble size
         for ensemble_size in ensemble_sizes:
-            model = models[(ensemble_size, sigma_min_x, sigma_y)]
-            avg_rmse = np.mean(model.rmses)
-            avg_rmses.append(avg_rmse)
+            enkf_avg_rmses.append(np.mean(enkf_models[ensemble_size].rmses))
+            kde_ve_avg_rmses.append(np.mean(kde_ve_models[(ensemble_size, sigma_min_x, sigma_y)].rmses))
+            kde_vp_avg_rmses.append(np.mean(kde_vp_models[(ensemble_size, sigma_min_x, sigma_y)].rmses))
 
-        # Create scatter plot of average RMSEs vs. ensemble size
-        fig = plt.figure(figsize=(8, 5), dpi=300)
-        plt.plot(ensemble_sizes, avg_rmses, color='blue', marker='o', label="KDE")
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(7, 5))
+        ax.plot(ensemble_sizes, enkf_avg_rmses, color='blue', marker='o', label="EnKF")
+        ax.plot(ensemble_sizes, kde_ve_avg_rmses, color='red', marker='o', label="KDE VE")
+        ax.plot(ensemble_sizes, kde_vp_avg_rmses, color='green', marker='o', label="KDE VP")
 
         # Add labels, title, and grid
-        plt.xlabel("Ensemble Size")
-        plt.ylabel("Average RMSE")
-        plt.grid(alpha=0.4)
-        plt.title(f"sigma_min_x = {sigma_min_x}, sigma_scale = {filter.sigma_scale}", fontsize=10, c="grey")
-        plt.legend()
+        ax.set_xlabel("Ensemble Size")
+        ax.set_ylabel("Average RMSE")
+        ax.grid(alpha=0.4)
+        ax.legend()
+
+        # Show the plot
         plt.show()
 
-        def save_plot(button):
+        # Save plot to file
+        save_dir = "data/rmses"  # Directory to save plots
+        os.makedirs(save_dir, exist_ok=True)  # Ensure directory exists
 
-            save_dir = "data/rmses"  # Directory to save the plot
-            os.makedirs(save_dir, exist_ok=True)  # Ensure the directory exists
-            
-            filename = f"{str(model)}_{str(filter)}_sigma{filter.sigma_config['sigma_min_x']}_{filter.sigma_scale}.png"
-            filepath = os.path.join(save_dir, filename)
-            fig.savefig(filepath, dpi=300)  # Save the plot
-            print(f"Plot saved to {filepath}")
+        # Define filename and file path
+        filename = f"L63_SX{sigma_min_x}_SY{sigma_y}.png"
+        filepath = os.path.join(save_dir, filename)
 
-        # Create a save button widget
-        save_button = widgets.Button(description="Save Plot", button_style='success')
-        save_button.on_click(save_plot)  # Attach the save function to the button click
-        display(save_button)  # Display the save button
-    
+        # Save the figure, overwriting any existing file
+        fig.savefig(filepath, dpi=300, bbox_inches='tight')
+        print(f"Plot saved to {filepath}")
+
+    # Create interactive widgets for sigma_x and sigma_y selection
     interact(plot,
              sigma_min_x=widgets.Dropdown(options=sigma_min_xs, value=default_sigma_x, description="\u03C3_x"),
-            sigma_y=widgets.Dropdown(options=sigma_ys, value=default_sigma_y, description="\u03C3_y")
+             sigma_y=widgets.Dropdown(options=sigma_ys, value=default_sigma_y, description="\u03C3_y")
              )
 
-def plot_sigmas(models, filters):
+def plot_sigmas(models):
+    """
+    
+    Args:
+        models (dict): Dictionary containing trained models, with keys as (ensemble_size, sigma_min_x, sigma_y).
+    """
 
-    ensemble_sizes, sigma_min_xs, sigma_ys = get_keys(models)
+    # Extract available ensemble sizes, sigma_min_x values, and sigma_y values
+    ensemble_sizes, sigma_min_xs, sigma_ys = get_kde_keys(models["KDE VE"])  # Use VE for structure
+    default_ensemble = ensemble_sizes[0]
+    # default_sigma_x = sigma_min_xs[0]
+    # default_sigma_y = sigma_ys[0]
 
-    def plot(ensemble_size):
+    # Set the initial model for time limits
+    # model = models["KDE VE"][(default_ensemble, default_sigma_x, default_sigma_y)]
+    # t_min_start = model.reference_times[0]
+    # t_min_end = model.reference_times[-1] - 5
+    # t_default = (model.T_spinup + model.T_burnin) * model.obs_dt
 
-        pass
+    fig, axes = None, None  # Global figure and axes for saving
 
-def get_keys(models):
+    def plot(ensemble_size, kde_type):
+        """
+        Inner function to generate and display a surface plot for a selected model.
+        
+        Args:
+            ensemble_size (int): Selected ensemble size.
+            kde_type (str): Either 'KDE VE' or 'KDE VP'.
+        """
 
+        nonlocal fig, axes  # Allow modification of global variables
+
+        X, Y = np.meshgrid(sigma_min_xs, sigma_ys)
+        Z = np.zeros_like(X, dtype=float)
+
+        for i in range(len(sigma_min_xs)):
+            for j in range(len(sigma_ys)):
+                sigma_x = X[j][i]
+                sigma_y = Y[j][i]
+                Z[j][i] = np.mean(models[kde_type][(ensemble_size, sigma_x, sigma_y)].rmses)
+
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(7, 5))
+        ax.pcolormesh(X, Y, Z, cmap='viridis')
+
+        # Add labels, title, and grid
+        ax.set_xlabel("Sigma X")
+        ax.set_ylabel("Sigma Y")
+        ax.set_zlabel("Average RMSE")
+        ax.set_title(f"RMSE Surface Plot ({kde_type}, Ensemble Size {ensemble_size})", fontweight="bold")
+
+        fig.colorbar(ax, shrink=0.5, aspect=10)
+
+        # Show the plot
+        plt.show()
+
+    # def save_plot(_):
+    #     """
+    #     Saves the currently displayed plot to the 'data/timeplots' directory.
+    #     """
+    #     if fig is None:
+    #         print("No plot available to save.")
+    #         return
+
+    #     save_dir = "data/timeplots"
+    #     os.makedirs(save_dir, exist_ok=True)
+
+    #     filename = f"L63_{kde_type_widget.value}_M{ensemble_size_widget.value}_SX{sigma_min_x_widget.value}_SY{sigma_y_widget.value}.png"
+    #     filepath = os.path.join(save_dir, filename)
+
+    #     fig.savefig(filepath, dpi=300, bbox_inches='tight')
+    #     print(f"Plot saved to {filepath}")
+
+    # Interactive widgets
+    # t_min_widget = widgets.FloatSlider(min=t_min_start, max=t_min_end, step=5, value=t_default, description="Start Time")
+    ensemble_size_widget = widgets.Dropdown(options=ensemble_sizes, value=default_ensemble, description="Ensemble")
+    # sigma_min_x_widget = widgets.Dropdown(options=sigma_min_xs, value=default_sigma_x, description="\u03C3_x")
+    # sigma_y_widget = widgets.Dropdown(options=sigma_ys, value=default_sigma_y, description="\u03C3_y")
+    kde_type_widget = widgets.Dropdown(options=["KDE VE", "KDE VP"], value="KDE VE", description="KDE Type")
+    # show_enkf_widget = widgets.Checkbox(value=False, description="Show EnKF Positions")
+    # save_button = widgets.Button(description="Save Plot", button_style='success')
+    # save_button.on_click(save_plot)
+
+    # Display widgets
+    interact(
+        plot,
+        # t_min=t_min_widget,
+        ensemble_size=ensemble_size_widget,
+        # sigma_min_x=sigma_min_x_widget,
+        # sigma_y=sigma_y_widget,
+        kde_type=kde_type_widget,
+        # show_enkf=show_enkf_widget
+    )
+
+    # display(save_button)
+
+
+# HELPER FN * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+
+def get_kde_keys(models):
+    """
+    Extracts unique ensemble sizes, sigma_min_x values, and sigma_y values from a KDE model dictionary.
+
+    Args:
+        models (dict): Dictionary of KDE models with tuple keys (ensemble_size, sigma_min_x, sigma_y).
+
+    Returns:
+        tuple: (list of ensemble_sizes, list of sigma_min_xs, list of sigma_ys)
+    """
     ensemble_sizes = sorted(set(key[0] for key in models.keys()))
     sigma_min_xs = sorted(set(key[1] for key in models.keys()))
     sigma_ys = sorted(set(key[2] for key in models.keys()))
 
     return ensemble_sizes, sigma_min_xs, sigma_ys
-

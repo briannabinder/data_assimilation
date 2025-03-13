@@ -1,46 +1,62 @@
-# import numpy as np
-from utils.logger import get_logger
+import os
+import sys
+import inspect
+import numpy as np
 from tqdm.notebook import tqdm
 
-# TODO: make sure to make all class methods abstract methods
+def run_data_assimilation(dir_path, filename, model, filter):
 
-def run_data_assimilation(model, filter):
+    # Ensure the directory exists
+    exp_path = dir_path
+    os.makedirs(exp_path, exist_ok=True)
 
-    logger = get_logger(str(model), str(filter), model.ensemble_size)
-    logger.info(f"MODEL={str(model)} | FILTER={str(filter)} | ENSEMBLE SIZE={model.ensemble_size}")
+    # Full file path
+    filepath = os.path.join(exp_path, filename)
 
-    # Get Initial Ensemble
-    # states 
-    logger.debug(f"Reference Initial State: {model.ref_initial_state}")
+    if os.path.exists(filepath): # Loads the existing file
 
-    current_states = model.initial_ensemble
-    current_time = model.initial_time
+        print(f"Loading existing data from {filepath}.")
+        data = np.load(filepath, allow_pickle=True)
 
-    # Run Data Assimilation
-    # for step in range(model.T_steps):
-    for step in tqdm(range(model.T_steps), desc=f"DA (M={model.ensemble_size}, \u03C3_x={filter.sigma_config['sigma_min_x']}, \u03C3_y={filter.sigma_config['sigma_y']})", unit="step"):
-    
-        # Prediction Step
-        logger.info(f"PREDICT (step={step + 1})")
+        model = data['model'].item() 
+        filter = data['filter'].item()
+        
+    else: # Runs data assimilation if no file exists
 
-        predicted_states = model.predict(current_states, current_time, logger)
+        # Get Initial Ensemble
+        current_states = model.initial_ensemble
+        current_time = model.initial_time # TODO
 
-        model.add_prediction(predicted_states)
+        
+        if str(filter) == "KDE": # Filter is KDE
 
-        # Update Step
-        logger.info(f"UPDATE (step={step + 1})")
+            loading_disp_str = f"DA {str(filter)} | M={model.ensemble_size} | {filter.scheduler} \u03C3_x={filter.sigma_min} \u03C3_y={filter.sigma_y}"
 
-        logger.debug(f"First state in ensemble: {predicted_states[0]}")
-        observation = model.observations[step]
-        logger.debug(f"Observation: {observation}")
+        elif str(filter) == "EnKF":
 
-        updated_states = filter.update(predicted_states, observation, logger)
+            loading_disp_str = f"DA {str(filter)} | M={model.ensemble_size}"
 
-        model.add_update(updated_states)
+        # Run Data Assimilation
+        for step in tqdm(range(model.T_steps), desc=loading_disp_str, unit="step", leave=False):
+        
+            # Prediction Step
+            predicted_states = model.predict(current_states, current_time)
+            model.add_prediction(predicted_states)
 
-        model.add_time()
-        current_states = updated_states
-        current_time = current_time + model.obs_dt
+            # Update Step
+            observation = model.observations[step]
+            updated_states = filter.update(predicted_states, observation)
+            model.add_update(updated_states)
 
-    model.post_process()
-    logger.info("FINISHED")
+            model.add_time()
+
+            current_states = updated_states
+            current_time = current_time + model.obs_dt
+
+        model.post_process() 
+
+        # Save the model and filter
+        print(f"Saving data to {filepath}.")
+        np.savez(filepath, model=model, filter=filter)
+
+    return model
