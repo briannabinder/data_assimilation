@@ -11,7 +11,7 @@ class VP:
         self.beta_max = sigma_max
 
     def _beta_t(self, t): 
-        return self.beta_min + t*(self.beta_max - self.beta_min)
+        return self.beta_min + t * (self.beta_max - self.beta_min)
     def _alpha_t(self, t):
         return t*self.beta_min + 0.5 * t**2 * (self.beta_max - self.beta_min)
     def _drift(self, x, t):
@@ -19,11 +19,14 @@ class VP:
     def _marginal_prob_mean(self, t):
         return np.exp(-0.5 * self._alpha_t(t))
     def _marginal_prob_std(self, t):
-        return np.sqrt(1 - np.exp(-self._alpha_t(t)))
+        # np.sqrt(1 - np.exp(-self._alpha_t(t)))
+        # put if to stop at min bandwidth stop integration
+        # root finder to finnd the t for smallest time
+        return np.sqrt(1 - self._marginal_prob_mean(t)**2)
     def _diffusion_coeff(self, t):
         # transform into g(t)
         # -> self._beta_t(t)
-        return np.sqrt(self._beta_t(t))
+        return self._beta_t(t)
     
 class VE:
     def __init__(self, sigma_max, sigma_min):
@@ -86,7 +89,6 @@ class KernelDensityEstimation(BaseFilter):
                  sigma_min, 
                  sigma_max, 
                  sigma_y, 
-                #  T, 
                  N_tsteps=500):
 
         np.random.seed(random_sd)
@@ -98,6 +100,7 @@ class KernelDensityEstimation(BaseFilter):
         self.scheduler = scheduler # "VE" (variance exploding) or "VP" (variance preserving)
         
         self.sigma_min = sigma_min
+
         self.sigma_max = sigma_max
         self.sigma_y = sigma_y
 
@@ -106,8 +109,18 @@ class KernelDensityEstimation(BaseFilter):
     
     def update(self, predicted_states, observation):
 
-        sample_dists = pdist(predicted_states)
-        min_dist = np.min(sample_dists)
+        # sample_dists = pdist(predicted_states)
+        # min_dist = np.min(sample_dists)
+
+        if self.sigma_min == "silverman":
+            ensemble_size = len(predicted_states)
+            print(f"ensemble = {ensemble_size}")
+            dim = len(predicted_states[0])
+            print(f"dim = {dim}")
+            states_std = np.mean(np.std(predicted_states, axis=0))
+            print(f"std = {states_std}")
+            self.sigma_min = (4/(dim+2))**(1/(dim+4)) * states_std * ensemble_size**(-1/(dim+4))
+            print(f"bandwidth = {self.sigma_min}")
 
         # Initialize Schedule
         if self.scheduler == "VE":
@@ -123,9 +136,7 @@ class KernelDensityEstimation(BaseFilter):
 
         predicted_observations = self.obs_op.get_observations(predicted_states)
 
-        # # Normalizes the states after obtaining the predicted observations
-        # scaler_states = StandardScaler()
-        # predicted_states = scaler_states.fit_transform(predicted_states)
+        # Shift predicted states to zero mean
         predicted_mean = np.mean(predicted_states, axis=0)
         predicted_states = predicted_states - predicted_mean
 
