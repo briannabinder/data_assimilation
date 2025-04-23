@@ -1,0 +1,16 @@
+# Byte-compiled / cache files
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Experiment outputs inside model folders
+models/*/exp/
+models/*/slurms/
+
+# macOS system file
+**/.DS_Store
