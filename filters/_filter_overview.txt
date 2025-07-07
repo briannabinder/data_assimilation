@@ -1,0 +1,60 @@
+=======================================
+FILTER OVERVIEW
+=======================================
+
+***** CATALOGUE *****
+
+  ID   | NAME                                 | SUFFIX
+  -----|--------------------------------------|----------------------------------------------------
+  ENKF | Ensemble Kalman Filter               | M{ensemble_size}
+  SIR  | Sequential Importance Re-sampling    | M{ensemble_size}
+  KDE  | Kernel Density Estimation            | M{ensemble_size}_HXMIN{h_x_min}_HXMAX{h_x_max}_HY{h_y}_NTSTEPS{N_tsteps}
+  SKDE | Stochastic Kernel Density Estimation | M{ensemble_size}_HXMIN{h_x_min}_HXMAX{h_x_max}_HY{h_y}_NTSTEPS{N_tsteps}
+
+***** CLASS STRUCTURE *****
+
+  filters/filter.py
+  ╭───────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ from filters import BaseFilter                                                                │
+  │                                                                                               │
+  │ # TODO: Necessary libraries                                                                   │
+  │                                                                                               │
+  │ class FILTER(BaseFilter):                                                                     │
+  │                                                                                               │
+  │     def __str__(self): return "FILTER"                                                        │
+  │                                                                                               │
+  │     def __init__(self, filter_args):                                                          │
+  │                                                                                               │
+  │         # Filter Parameters                                                                   │
+  │         self.filter_arg1 = filter_args['filter_arg1']                                         │
+  │         self.filter_arg2 = filter_args['filter_arg2']                                         │
+  │         ...                                                                                   │
+  │                                                                                               │
+  │     def update(self, predicted_states, predicted_observations, observation):                  │
+  │                                                                                               │
+  │         # TODO: Evaluate the updated states                                                   │
+  │                                                                                               │
+  │         return updated_states                                                                 │
+  │                                                                                               │
+  │     def _helper_fn(self):                                                                     │
+  │         pass                                                                                  │
+  ╰───────────────────────────────────────────────────────────────────────────────────────────────╯
+
+***** ADDING A NEW FILTER *****
+
+  1. Modify filters/__init__.py
+     -> from .filter import FILTER
+
+  2. Add imports in main.py
+     -> from filters import KDE, SKDE, ENKF, SIR, FILTER
+
+  3. Add filter subparser in main.py (Experiment Setup -> Experiment Configuration)
+     -> filter_parser = subparsers.add_parser("FILTER", help="Filter")
+     -> filter_parser.add_argument("--arg1", required=True, type=arg1_type, help="arg1 description")
+     -> filter_parser.add_argument("--arg2", required=False, default=arg2_default, type=arg2_type, help="arg2 description")
+
+  4. Add filter case in main.py (Experiment Setup -> Filter Setup)
+     -> elif filter_name == "FILTER":
+     ->     filter_args['arg3'] = arg3 # Add filter arguments that are not in subparser
+     ->     filter = FILTER(filter_args)
+     ->     filter_suffix = f"ARG1{filter_args['arg1']}_ARG2{filter_args['arg2']}"

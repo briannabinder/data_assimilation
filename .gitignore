@@ -1,0 +1,13 @@
+# Byte-compiled / cache files
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+
+# Experiment outputs
+exps/*/jobs/
+exps/*/outputs/
+exps/*/results/
+exps/*/*.h5
+
+# macOS system file
+**/.DS_Store

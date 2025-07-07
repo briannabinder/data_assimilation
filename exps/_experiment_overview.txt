@@ -1,0 +1,85 @@
+=======================================
+EXPERIMENT OVERVIEW
+=======================================
+
+***** CATALOGUE *****
+
+  ID      | MODEL | OBSERVATION OP | NOTES
+  --------|-------|----------------|---------------------------------------------------------------
+  TOY_01  | TOY   | AbsGauss       | Bimodal toy problem
+  L63_01  | L63   | PartialGauss   | Bamdad experiment 
+  L63_02  | L63   | FullGauss      | Baptista experiment (w integration dt = 0.01)
+
+***** EXPERIMENT FOLDER STRUCTURE *****
+
+  EXP_ID/
+  ├── jobs/                   # Contains CARC job scripts (generated using generate_jobs.py)
+  │   ├── job1.slurm
+  │   ├── job2.slurm
+  │   └── ...
+  ├── outputs/                # Contains output logs from CARC
+  │   ├── output1.out
+  │   ├── output2.out
+  │   └── ...
+  ├── results/                # Contains the experiment results
+  │   ├── <exp_1>.h5
+  │   ├── <exp_2>.h5
+  │   └── ...
+  ├── config.yaml             # Configuration file for model and observation operator
+  └── data.h5                 # Ground truth and observations
+
+***** CONFIG STRUCTURE *****
+
+  exps/EXP_ID/config.yaml
+  ╭───────────────────────────────────────────────────────────────────────────────────────────────╮
+  │  exp_id: EXP_ID                                                                               │
+  │                                                                                               │
+  │  num_sims: 10                 # (int) Number of simulations                                   │
+  │                                                                                               │
+  │  model:                                                                                       │
+  │    name: Model                # (str) Name of model                                           │
+  │    global_args:                                                                               │
+  │      state_dim: 1             # (int) State dimension (dx)                                    │
+  │      observation_dim: 1       # (int) Observation dimension (dy)                              │
+  │      initial_time: 0          # (float) Start time of the simulation                          │
+  │      T_steps: 1000            # (int) Number of data assimilation steps                       │
+  │      dt: 0.1                  # (float) Time step size                                        │
+  │    local_args:                                                                                │
+  │      local_arg1: 10           # (float) Model argument 1                                      │
+  │      local_arg2: 10           # (float) Model argument 2                                      │
+  │                                                                                               │
+  │  obs_operator:                                                                                │
+  │    name: ObservationOp        # (str) Name of observation operator                            │
+  │    args:                                                                                      │
+  │      arg1: 2                  # (int) Observation operator argument 1                         │
+  │      arg2: 0.1                # (float) Observation operator argument 2                       │
+  ╰───────────────────────────────────────────────────────────────────────────────────────────────╯
+
+***** DATA & RESULT STRUCTURE *****
+
+  ╭ LEGEND ───────────────────────╮
+  │ S : Number of simulations     │
+  │ T : Number of time steps (+1) │
+  │ N : Number of particles       │
+  │ X : State dimension           │
+  │ Y : Observation dimension     │
+  ╰───────────────────────────────╯
+
+  TRUTH & OBSERVATIONS : data.h5
+  --------------------------------------------------------------------------------------------
+  KEY                        | SHAPE         | DESCRIPTION
+  ---------------------------|---------------|------------------------------------------------
+  times                      | T             | Array of time values
+  all_true_state             | S x T x X     | Ground truth states
+  all_observations           | S x T x Y     | Observations with noise
+  all_observations_clean     | S x T x Y     | Observations without noise
+  --------------------------------------------------------------------------------------------
+
+  EXPERIMENT RESULTS : {MODEL}_{OBS OP}_{FILTER}_{filter suffix}.h5
+  --------------------------------------------------------------------------------------------
+  KEY                        | SHAPE         | DESCRIPTION
+  ---------------------------|---------------|------------------------------------------------
+  all_predicted_states       | S x T x N x X | Predicted ensemble before update
+  all_predicted_observations | S x T x N x X | Predicted observations (from predicted states)
+  all_updated_states         | S x T x N x X | Ensemble after filter update
+  --------------------------------------------------------------------------------------------

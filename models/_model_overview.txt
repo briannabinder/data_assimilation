@@ -1,0 +1,148 @@
+=======================================
+MODEL OVERVIEW
+=======================================
+
+***** CATALOGUE *****
+
+  ID   | NAME                | OBSERVATION OPS
+  -----|---------------------|---------------------------------------------------------------------
+  L63  | Lorenz-63           | PartialGauss
+  L96  | Lorenz-96           |
+  TOY  | Bimodal Toy Problem | AbsGauss
+
+***** CLASS STRUCTURE *****
+
+  models/model.py
+  ╭───────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ from models import BaseModel                                                                  │
+  │                                                                                               │
+  │ # TODO: Necessary libraries                                                                   │
+  │                                                                                               │
+  │ class MODEL(BaseModel):                                                                       │
+  │                                                                                               │
+  │     def __str__(self): return f"MODEL_{self.obs_operator_name}"                               │
+  │                                                                                               │
+  │     def __init__(self, model_args, obs_operator):                                             │
+  │                                                                                               │
+  │         # Model Parameters                                                                    │
+  │         super().__init__(model_args['global_args'])                                           │
+  │                                                                                               │
+  │         self.arg1 = model_args['local_args']['arg1']                                          │
+  │         self.arg2 = eval(model_args['local_args']['arg2'])                                    │
+  │         ...                                                                                   │
+  │                                                                                               │
+  │         # Observation Operator Parameters                                                     │
+  │         self.obs_operator_name = obs_operator_args['name']                                    │
+  │         self.obs_operator_args = obs_operator_args['args']                                    │
+  │                                                                                               │
+  │     @property                                                                                 │
+  │     def initial_true_state(self):                                                             │
+  │         # Returns a single initial state -> [1 x dx]                                          │
+  │         return initial_true_state                                                             │
+  │                                                                                               │
+  │     @property                                                                                 │
+  │     def initial_ensemble(self):                                                               │
+  │         # Returns an ensemble of initial states -> [N x dx]                                   │
+  │         return initial_ensemble                                                               │
+  │                                                                                               │
+  │     def predict(self, states, time_span, apply_noise=True):                                   │
+  │         """                                                                                   │
+  │         Propogates the given states forward in time.                                          │
+  │                                                                                               │
+  │         TODO: Forward model description                                                       │
+  │                                                                                               │
+  │         Args:                                                                                 │
+  │             states (array):      Ensemble of states to propogate   -> [N x dx]                │
+  │             time_span (tuple):   (time_start, time_end)                                       │
+  │             apply_noise (bool):  If True, applies noise                                       │
+  │                                                                                               │
+  │         Returns:                                                                              │
+  │             predicted_states (array): Ensemble of predicted states -> [N x dx]                │
+  │         """                                                                                   │
+  │                                                                                               │
+  │         # TODO: Evaluate the predicted states (without noise)                                 │
+  │                                                                                               │
+  │         # Apply noise                                                                         │
+  │         if apply_noise == True:                                                               │
+  │             pass                                                                              │
+  │                                                                                               │
+  │         return predicted_states                                                               │
+  │                                                                                               │
+  │     def observe(self, states, apply_noise=True):                                              │
+  │         """                                                                                   │
+  │         Applies the observation operator to the given states.                                 │
+  │                                                                                               │
+  │         Args:                                                                                 │
+  │             states (array):      Ensemble of states to observe     -> [N x dx]                │
+  │             apply_noise (bool):  If True, applies noise                                       │
+  │                                                                                               │
+  │         Returns:                                                                              │
+  │             observations (array): Ensemble of observations         -> [N x dy]                │
+  │         """                                                                                   │
+  │                                                                                               │
+  │         states = np.atleast_2d(states)                                                        │
+  │                                                                                               │
+  │         if self.obs_operator_name == 'ObsOp1':                                                │
+  │             return self.obs_op1(states, self.obs_operator_args, apply_noise=apply_noise)      │
+  │                                                                                               │
+  │         elif self.obs_operator_name == 'ObsOp2':                                              │
+  │             return self.obs_op2(states, self.obs_operator_args, apply_noise=apply_noise)      │
+  │                                                                                               │
+  │         else:                                                                                 │
+  │             error_str = f"\n[ERROR] Unknown Observation Operator: {self.obs_operator_name}"   │
+  │             raise ValueError(error_str)                                                       │
+  │                                                                                               │
+  │     @staticmethod                                                                             │
+  │     def ObsOp2(states, args, apply_noise):                                                    │
+  │         """                                                                                   │
+  │         TODO: Observation operator description                                                │
+  │         """                                                                                   │
+  │                                                                                               │
+  │         # Arguments                                                                           │
+  │         arg1 = args['arg1']                                                                   │
+  │         arg2 = args['arg2']                                                                   │
+  │         ...                                                                                   │
+  │                                                                                               │
+  │         # TODO: Make observations (without noise)                                             │
+  │                                                                                               │
+  │         # Apply noise                                                                         │
+  │         if apply_noise == True:                                                               │
+  │             pass                                                                              │
+  │                                                                                               │
+  │         return observations                                                                   │
+  │                                                                                               │
+  │     @staticmethod                                                                             │
+  │     def ObsOp2(states, args, apply_noise):                                                    │
+  │         """                                                                                   │
+  │         TODO: Observation operator description                                                │
+  │         """                                                                                   │
+  │                                                                                               │
+  │         # Arguments                                                                           │
+  │         arg1 = args['arg1']                                                                   │
+  │         arg2 = args['arg2']                                                                   │
+  │         ...                                                                                   │
+  │                                                                                               │
+  │         # TODO: Make observations (without noise)                                             │
+  │                                                                                               │
+  │         # Apply noise                                                                         │
+  │         if apply_noise == True:                                                               │
+  │             pass                                                                              │
+  │                                                                                               │
+  │         return observations                                                                   │
+  │                                                                                               │
+  │      def _helper_fn(self):                                                                    │
+  │          pass                                                                                 │
+  ╰───────────────────────────────────────────────────────────────────────────────────────────────╯
+
+***** ADDING A NEW MODEL *****
+
+  1. Modify models/__init__.py
+     -> from .model import MODEL
+
+  2. Add imports in main.py
+     -> from models import Lorenz63, Lorenz96, Toy, MODEL
+
+  3. Add model case in main.py (Experiment Setup -> Model Setup)
+     -> elif model_name == "Model":
+     ->     model = MODEL(model_args, obs_operator)
+     
