@@ -79,7 +79,7 @@ class KDE(BaseFilter):
 
     class VE: # Variance Exploding
         def __init__(self, sigma_max):
-            self.sigma_min = 0
+            self.sigma_min = 1e-4
             self.sigma_max = sigma_max
 
         def _drift(self, x, t): # f(x, t)

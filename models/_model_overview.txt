@@ -6,7 +6,7 @@ MODEL OVERVIEW
 
   ID   | NAME                | OBSERVATION OPS
   -----|---------------------|---------------------------------------------------------------------
-  L63  | Lorenz-63           | PartialGauss
+  L63  | Lorenz-63           | PartialGauss, FullGauss
   L96  | Lorenz-96           |
   TOY  | Bimodal Toy Problem | AbsGauss
 
@@ -32,8 +32,8 @@ MODEL OVERVIEW
   │         ...                                                                                   │
   │                                                                                               │
   │         # Observation Operator Parameters                                                     │
-  │         self.obs_operator_name = obs_operator_args['name']                                    │
-  │         self.obs_operator_args = obs_operator_args['args']                                    │
+  │         self.obs_operator_name = obs_operator['name']                                         │
+  │         self.obs_operator_args = obs_operator['args']                                         │
   │                                                                                               │
   │     @property                                                                                 │
   │     def initial_true_state(self):                                                             │

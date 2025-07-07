@@ -78,12 +78,7 @@ for h_y in h_ys:
 print(f"{job_count-1} jobs saved at ./exps/{exp_id}/jobs/")
 print("Done!")
 
-
-
-
 # Useful CARC commands
 # watch -n 1 myqueue 
-# sbatch ./slurms/train2.slurm <- To run on CARC
 # sbatch ./exps/exp_id/jobs/train1.slurm <- To run on CARC
-
 # for i in {2..101}; do sbatch "./exps/L63_01/jobs/job$i.slurm"; done
