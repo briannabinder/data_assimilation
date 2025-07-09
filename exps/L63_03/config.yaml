@@ -1,0 +1,26 @@
+exp_id: L63_03
+
+num_sims: 10                # (int) Number of simulations
+
+model:
+  name: Lorenz63            # (str) Name of model
+  args:
+    global_args:
+      state_dim: 3          # (int) State dimension (dx)
+      observation_dim: 1    # (int) Observation dimension (dy)
+      initial_time: 0       # (float) Start time of the simulation
+      T_steps: 100         # (float) Time step size
+      dt: 0.1               # (int) Number of data assimilation time steps
+    local_args:
+      sigma: 10                       # (float) Model Parameter:  Prandtl number
+      rho: 28                         # (float) Model Parameter:  Rayleigh number
+      beta: 8/3                       # (float) Model Parameter:  Physical dimensions of the layer
+      initial_noise: 1                # (float) Std of Gaussian noise for initial ensemble sampling
+      process_noise: 1e-2             # (float) Std of Gaussian noise for forward process
+      integration_dt: 0.01            # (float) Integration time step
+    
+obs_operator:
+  name: PartialGauss        # (str) Name of observation operator
+  args:
+    idx: 2
+    sigma: 2                # (float) Std of Gaussian noise added to observations

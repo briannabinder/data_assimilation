@@ -23,7 +23,7 @@ class KDE(BaseFilter):
 
         # Initialize Schedule
         if self.scheduler == "VE":
-            schedule = self.VE(self.h_x_max)
+            schedule = self.VE(self.h_x_min, self.h_x_max)
         elif self.scheduler == "VP":
             schedule = self.VP(self.h_x_max)
 
@@ -70,16 +70,16 @@ class KDE(BaseFilter):
         err_tol = 1e-5
 
         t_eval = np.linspace(1, 0, N_tsteps)
-        t_index = np.argmin(np.abs(schedule._marginal_prob_std(t_eval) - sigma_min))
-        t_end = t_eval[t_index]
+        # t_index = np.argmin(np.abs(schedule._marginal_prob_std(t_eval) - sigma_min))
+        # t_end = t_eval[t_index]
 
-        res = solve_ivp(ode_func, (1, t_end), init_x.flatten(), rtol=err_tol, atol=err_tol, method='RK45', dense_output=True, t_eval=t_eval[:t_index + 1] )
+        res = solve_ivp(ode_func, (1, 0), init_x.flatten(), rtol=err_tol, atol=err_tol, method='RK45', dense_output=True, t_eval=t_eval)
 
         return res.y[:,-1]
 
     class VE: # Variance Exploding
-        def __init__(self, sigma_max):
-            self.sigma_min = 1e-4
+        def __init__(self, sigma_min, sigma_max):
+            self.sigma_min = sigma_min
             self.sigma_max = sigma_max
 
         def _drift(self, x, t): # f(x, t)

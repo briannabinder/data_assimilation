@@ -108,8 +108,8 @@ class Lorenz63(BaseModel):
     @staticmethod
     def partialGauss(states, args, apply_noise):
         """
-        x = (x_1, x_2, x_3)
-        y = x_3 + e where e ~ N(0, sigma^2)
+        x = (x_0, x_1, x_2)
+        y = x_idx + e where e ~ N(0, sigma^2)
         """
 
         # Arguments
@@ -129,7 +129,6 @@ class Lorenz63(BaseModel):
     @staticmethod
     def fullGauss(states, args, apply_noise):
         """
-        x = (x_1, x_2, x_3)
         y = x + e where e ~ N(0, sigma^2)
         """
 

@@ -7,7 +7,7 @@ filter = "KDE" # SKDE
 # h_x_maxs       = [3, 5, 10, 15, 20, 25, 35, 50]
 # h_ys           = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
 
-exp_id = "L63_02"
+exp_id = "L63_03"
 ensemble_sizes = [250, 500, 1000]
 h_x_mins       = [0.1, 0.2, 0.5, 1, 2, 5, 10]
 h_x_maxs       = [30, 60, 100, 300, 500]
@@ -81,4 +81,4 @@ print("Done!")
 # Useful CARC commands
 # watch -n 1 myqueue 
 # sbatch ./exps/exp_id/jobs/train1.slurm <- To run on CARC
-# for i in {2..101}; do sbatch "./exps/L63_01/jobs/job$i.slurm"; done
+# for i in {1..100}; do sbatch "./exps/L63_03/jobs/job$i.slurm"; done

@@ -7,7 +7,7 @@ MODEL OVERVIEW
   ID   | NAME                | OBSERVATION OPS
   -----|---------------------|---------------------------------------------------------------------
   L63  | Lorenz-63           | PartialGauss, FullGauss
-  L96  | Lorenz-96           |
+  L96  | Lorenz-96           | OddGauss, EvenGauss
   TOY  | Bimodal Toy Problem | AbsGauss
 
 ***** CLASS STRUCTURE *****

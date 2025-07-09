@@ -7,8 +7,10 @@ EXPERIMENT OVERVIEW
   ID      | MODEL | OBSERVATION OP | NOTES
   --------|-------|----------------|---------------------------------------------------------------
   TOY_01  | TOY   | AbsGauss       | Bimodal toy problem
-  L63_01  | L63   | PartialGauss   | Bamdad experiment 
-  L63_02  | L63   | FullGauss      | Baptista experiment (w integration dt = 0.01)
+  L63_01  | L63   | PartialGauss   | Bamdad experiment setup
+  L63_02  | L63   | FullGauss      | Ricardo L63 experiment setup (w integration dt = 0.01)
+  L63_03  | L63   | PartialGauss   | Ricardo L63 experiment setup (w integration dt = 0.01)
+  L96_01  | L96   | OddGauss       | Ricardo L96 experiment setup
 
 ***** EXPERIMENT FOLDER STRUCTURE *****
 
@@ -80,6 +82,6 @@ EXPERIMENT OVERVIEW
   KEY                        | SHAPE         | DESCRIPTION
   ---------------------------|---------------|------------------------------------------------
   all_predicted_states       | S x T x N x X | Predicted ensemble before update
-  all_predicted_observations | S x T x N x X | Predicted observations (from predicted states)
+  all_predicted_observations | S x T x N x Y | Predicted observations (from predicted states)
   all_updated_states         | S x T x N x X | Ensemble after filter update
   --------------------------------------------------------------------------------------------

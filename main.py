@@ -38,7 +38,7 @@ def main():
     skde_parser.add_argument("--h_y", required=True, type=float, help="")
     skde_parser.add_argument("--scheduler", required=False, default="VE", type=str, help="Scheduler to use")
     skde_parser.add_argument("--h_x_max", required=False, default=50 , type=float, help="")
-    skde_parser.add_argument("--N_tsteps", required=False, default=1000, type=int, help="")
+    skde_parser.add_argument("--N_tsteps", required=False, default=5000, type=int, help="")
 
     # --- SIR Filter ---
     sir_parser = subparsers.add_parser("SIR", help="Sequential Importance Resampling filter")
@@ -182,7 +182,7 @@ def main():
     # ==============================================================================
     print(f"\n--- RUN DATA ASSIMILATION {'-' * 54}")
 
-    save_file_path = f"./exps/{exp_id}/results/{str(model)}_{str(filter)}_{filter_suffix}.h5"
+    save_file_path = f"./exps/{exp_id}/results/{str(filter)}/{str(model)}_{str(filter)}_{filter_suffix}.h5"
 
     if not os.path.isfile(save_file_path): # Run data assimilation if results don't already exist
 

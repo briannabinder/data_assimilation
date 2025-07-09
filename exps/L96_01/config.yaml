@@ -1,0 +1,22 @@
+exp_id: L96_01
+
+num_sims: 10                # (int) Number of simulations
+
+model:
+  name: Lorenz96            # (str) Name of model
+  args:
+    global_args:
+      state_dim: 40         # (int) State dimension (dx)
+      observation_dim: 20   # (int) Observation dimension (dy)
+      initial_time: 0       # (float) Start time of the simulation
+      T_steps: 100          # (float) Time step size
+      dt: 0.1               # (int) Number of data assimilation time steps
+    local_args:
+      constant_forcing: 8             # (float) Model Parameter: Constant Forcing
+      initial_noise: 1                # (float) Std of Gaussian noise for initial ensemble sampling
+      integration_dt: 0.01            # (float) Integration time step
+
+obs_operator:
+  name: OddGauss        # (str) Name of observation operator
+  args:
+    sigma: np.sqrt(0.5)               # (float) Std of Gaussian noise added to observations
