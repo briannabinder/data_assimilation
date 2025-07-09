@@ -9,7 +9,7 @@ model:
       state_dim: 3          # (int) State dimension (dx)
       observation_dim: 3    # (int) Observation dimension (dy)
       initial_time: 0       # (float) Start time of the simulation
-      T_steps: 4000         # (float) Time step size
+      T_steps: 100         # (float) Time step size
       dt: 0.1               # (int) Number of data assimilation time steps
     local_args:
       sigma: 10                       # (float) Model Parameter:  Prandtl number

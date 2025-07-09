@@ -6,3 +6,4 @@ from .enkf import ENKF
 from .kde import KDE
 from .sir import SIR
 from .skde import SKDE
+from .sflow import SFLOW

@@ -3,7 +3,7 @@ from tqdm import tqdm
 import numpy as np
 
 from models import Lorenz63, Lorenz96, Toy
-from filters import KDE, SKDE, ENKF, SIR
+from filters import KDE, SKDE, ENKF, SIR, SFLOW
 
 def main():
 
@@ -39,6 +39,19 @@ def main():
     skde_parser.add_argument("--scheduler", required=False, default="VE", type=str, help="Scheduler to use")
     skde_parser.add_argument("--h_x_max", required=False, default=50 , type=float, help="")
     skde_parser.add_argument("--N_tsteps", required=False, default=5000, type=int, help="")
+
+    # --- SFLOW Filter ---
+    sflow_parser = subparsers.add_parser("SFLOW", help="Stochastic Interpolant")
+    sflow_parser.add_argument("--ensemble_size", required=True, type=int, help="Number of particles")
+    sflow_parser.add_argument("--width", required=False, default=256, type=int, help="Width of the network")
+    sflow_parser.add_argument("--depth", required=False, default=4, type=int, help="Depth of the network")
+    sflow_parser.add_argument("--activation", required=False, default="ReLU", type=str, help="Activation function")
+    sflow_parser.add_argument("--model_type", required=False, default="modelNN2", type=str, help="Model type")
+    # sflow_parser.add_argument("--device", required=False, default="ReLU", type=str, help="Activation function")
+    sflow_parser.add_argument("--n_iters", required=False, default=50000, type=int, help="Number of iterations")
+    # sflow_parser.add_argument("--model_type", required=False, default="modelNN2", type=str, help="Model type")
+    sflow_parser.add_argument("--lr", required=False, default=1e-3, type=float, help="Learning rate")
+    sflow_parser.add_argument("--prior_to_posterior", required=False, default=False, type=bool, help="Latent distribution is Gaussian")
 
     # --- SIR Filter ---
     sir_parser = subparsers.add_parser("SIR", help="Sequential Importance Resampling filter")
@@ -107,6 +120,15 @@ def main():
     elif filter_name == "ENKF":
         filter = ENKF(filter_args)
         filter_suffix = f"M{filter_args['ensemble_size']}"
+    
+    elif filter_name == "SFLOW":
+        filter_args['n_dim_x'] = model_args['global_args']['state_dim']
+        filter_args['n_dim_y'] = model_args['global_args']['observation_dim']
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        filter_args['device'] = device
+        filter_args['batch_size'] = int(filter_args['ensemble_size'] / 2)
+        filter = SFLOW(filter_args)
+        filter_suffix = f"M{filter_args['ensemble_size']}_W{filter_args['width']}_D{filter_args['depth']}_P2P{filter_args['prior_to_posterior']}"
 
     else:
         raise ValueError(f"\n[ERROR] Unknown filter: {filter_name}")
