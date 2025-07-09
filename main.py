@@ -182,7 +182,9 @@ def main():
     # ==============================================================================
     print(f"\n--- RUN DATA ASSIMILATION {'-' * 54}")
 
-    save_file_path = f"./exps/{exp_id}/results/{str(filter)}/{str(model)}_{str(filter)}_{filter_suffix}.h5"
+    save_dir = f"./exps/{exp_id}/results/{str(filter)}/"
+    save_file_path = save_dir + f"{str(model)}_{str(filter)}_{filter_suffix}.h5"
+    os.makedir(save_dir, exist_ok=True)
 
     if not os.path.isfile(save_file_path): # Run data assimilation if results don't already exist
 
