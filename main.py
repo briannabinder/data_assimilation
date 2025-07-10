@@ -1,4 +1,4 @@
-import time, argparse, yaml, os, h5py
+import time, argparse, yaml, os, h5py, torch
 from tqdm import tqdm
 import numpy as np
 
@@ -206,7 +206,7 @@ def main():
 
     save_dir = f"./exps/{exp_id}/results/{str(filter)}/"
     save_file_path = save_dir + f"{str(model)}_{str(filter)}_{filter_suffix}.h5"
-    os.makedir(save_dir, exist_ok=True)
+    os.makedirs(save_dir, exist_ok=True)
 
     if not os.path.isfile(save_file_path): # Run data assimilation if results don't already exist
 
@@ -270,7 +270,8 @@ def run_data_assimilation(model, filter, observations, times):
     predicted_observations[0] = np.full((model.ensemble_size, model.observation_dim), np.nan)
     updated_states[0]         = predicted_states[0]
     
-    for t in range(1, len(times)): # t : [1, T]
+    # for t in range(1, len(times)): # t : [1, T]
+    for t in tqdm(range(1, len(times)), desc="DA"): # t : [1, T]
 
         time_start, time_end = times[t-1], times[t]
 
@@ -293,3 +294,6 @@ if __name__ == "__main__":
     # python3 main.py --exp_id L63_01 KDE --ensemble_size 250 --h_x_min 0.4 --h_x_max 50 --h_y 2
     # python3 main.py --exp_id L63_01 SIR --ensemble_size 250 
     # python3 main.py --exp_id L63_01 ENKF --ensemble_size 250
+
+    # python3 main.py --exp_id L96_01 ENKF --ensemble_size 250
+    # python3 main.py --exp_id L96_01 KDE --ensemble_size 1000 --h_x_min 0.1 --h_x_max 50 --h_y 0.5

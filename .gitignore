@@ -6,7 +6,7 @@ __pycache__/
 # Experiment outputs
 exps/*/jobs/*.slurm
 exps/*/outputs/*.out
-exps/*/results/*.h5
+exps/*/results/*
 exps/*/*.h5
 
 # macOS system file

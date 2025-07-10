@@ -14,6 +14,7 @@ model:
     local_args:
       constant_forcing: 8             # (float) Model Parameter: Constant Forcing
       initial_noise: 1                # (float) Std of Gaussian noise for initial ensemble sampling
+      process_noise: 0.1                # (float) Std of Gaussian noise for initial ensemble sampling
       integration_dt: 0.01            # (float) Integration time step
 
 obs_operator:

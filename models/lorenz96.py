@@ -15,6 +15,8 @@ class Lorenz96(BaseModel):
 
         self.initial_noise = model_args['local_args']['initial_noise']
         if isinstance(self.initial_noise, str): self.initial_noise = eval(self.initial_noise)
+        self.process_noise = model_args['local_args']['process_noise']
+        if isinstance(self.process_noise, str): self.initial_noise = eval(self.process_noise)
 
         self.integration_dt = model_args['local_args']['integration_dt']
 
@@ -64,7 +66,8 @@ class Lorenz96(BaseModel):
             predicted_states = predicted_states + derivatives(predicted_states, t_start) * (t_end - t_start)
 
         # Apply noise
-        if apply_noise == True: pass
+        if apply_noise == True:
+            predicted_states = predicted_states + np.random.normal(loc=0, scale=self.process_noise, size=predicted_states.shape)
         
         return predicted_states
 
