@@ -85,13 +85,13 @@ def main():
     # Get observation operator arguments from config
     obs_operator = config['obs_operator']
 
-    if model_name == "Lorenz63":
+    if model_name == "L63":
         model = Lorenz63(model_args, obs_operator)
 
-    elif model_name == "Lorenz96":
+    elif model_name == "L96":
         model = Lorenz96(model_args, obs_operator)
 
-    elif model_name == "Toy":
+    elif model_name == "TOY":
         model = Toy(model_args, obs_operator)
 
     else:
@@ -101,11 +101,11 @@ def main():
 
     if filter_name == "KDE":
         filter = KDE(filter_args)
-        filter_suffix = f"M{filter_args['ensemble_size']}_HXMIN{filter_args['h_x_min']}_HXMAX{filter_args['h_x_max']}_HY{filter_args['h_y']}_NTSTEPS{filter_args['N_tsteps']}"
+        filter_suffix = f"M{filter_args['ensemble_size']}_HXMIN{filter_args['h_x_min']}_HXMAX{filter_args['h_x_max']}_HY{filter_args['h_y']}"
 
     elif filter_name == "SKDE":
         filter = SKDE(filter_args)
-        filter_suffix = f"M{filter_args['ensemble_size']}_HXMIN{filter_args['h_x_min']}_HXMAX{filter_args['h_x_max']}_HY{filter_args['h_y']}_NTSTEPS{filter_args['N_tsteps']}"
+        filter_suffix = f"M{filter_args['ensemble_size']}_HXMIN{filter_args['h_x_min']}_HXMAX{filter_args['h_x_max']}_HY{filter_args['h_y']}"
 
     elif filter_name == "SIR":
         filter_args['observation_op'] = model.observe
@@ -270,8 +270,8 @@ def run_data_assimilation(model, filter, observations, times):
     predicted_observations[0] = np.full((model.ensemble_size, model.observation_dim), np.nan)
     updated_states[0]         = predicted_states[0]
     
-    # for t in range(1, len(times)): # t : [1, T]
-    for t in tqdm(range(1, len(times)), desc="DA"): # t : [1, T]
+    for t in range(1, len(times)): # t : [1, T]
+    # for t in tqdm(range(1, len(times)), desc="DA"): # t : [1, T]
 
         time_start, time_end = times[t-1], times[t]
 

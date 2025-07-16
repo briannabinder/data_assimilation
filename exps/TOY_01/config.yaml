@@ -3,7 +3,7 @@ exp_id: TOY_01
 num_sims: 10                # (int) Number of simulations
 
 model:
-  name: Toy                 # (str) Name of model
+  name: TOY                 # (str) Name of model
   args:
     global_args:
       state_dim: 1          # (int) State dimension (dx) 

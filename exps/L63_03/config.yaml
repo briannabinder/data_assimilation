@@ -3,7 +3,7 @@ exp_id: L63_03
 num_sims: 10                # (int) Number of simulations
 
 model:
-  name: Lorenz63            # (str) Name of model
+  name: L63            # (str) Name of model
   args:
     global_args:
       state_dim: 3          # (int) State dimension (dx)
