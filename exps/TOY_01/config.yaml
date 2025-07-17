@@ -1,4 +1,4 @@
-exp_id: TOY_01 
+# TOY_01 
 
 num_sims: 10                # (int) Number of simulations
 
@@ -19,3 +19,10 @@ obs_operator:
   name: AbsGauss            # (str) Name of observation operator
   args:
     sigma: 0.1              # (float) Std of Gaussian noise added to observations
+
+sweep_params:
+  ensemble_sizes: [50, 100, 200, 250, 300, 500, 1000]
+  kde:
+    h_x_mins: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    h_x_maxs: [3, 5, 10, 15, 20, 25, 35, 50]
+    h_ys: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]

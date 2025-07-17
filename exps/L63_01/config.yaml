@@ -1,4 +1,4 @@
-exp_id: L63_01
+# L63_01
 
 num_sims: 10                # (int) Number of simulations
 
@@ -25,3 +25,10 @@ obs_operator:
   args:
     idx: 2                  # (int) Index of state observed
     sigma: np.sqrt(10)      # (float) Std of Gaussian noise added to observations
+
+sweep_params:
+  ensemble_sizes: [250, 500, 1000]
+  kde:
+    h_x_mins: [0.1, 0.2, 0.5, 1, 2, 5, 10]
+    h_x_maxs: [30, 60, 100, 300, 500]
+    h_ys: [0.1, 0.5, 1, 2, 5, 10, 12, 15, 20, 40]
