@@ -5,6 +5,8 @@ from scipy.spatial.distance import cdist
 from scipy.special import softmax
 from scipy.integrate import solve_ivp
 from .flow import Flow
+import torch
+from sklearn.preprocessing import MinMaxScaler
 
 class SFLOW(BaseFilter):
 
@@ -25,8 +27,8 @@ class SFLOW(BaseFilter):
         self.batch_size = filter_args['batch_size']
         self.lr = filter_args['lr']
         self.prior_to_posterior = filter_args['prior_to_posterior']
+        self.scheduler = filter_args['scheduler']
 
-    
     def update(self, predicted_states, predicted_observations, observation):
 
         # Min max normalize the predicted states between -0.5 and 0.5
@@ -41,12 +43,13 @@ class SFLOW(BaseFilter):
         training_data = torch.tensor(training_data, dtype=torch.float32)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         n_dim = training_data.shape[1]
-        model = modelNN(n_dim, width=64, depth=4).to(device)
+        # model = modelNN(n_dim, width=64, depth=4).to(device)
 
         flow = Flow(n_dim_x=self.n_dim_x, n_dim_y=self.n_dim_y, width=self.width, depth=self.depth, activation=self.activation, model_type=self.model_type, device=self.device)
 
-        training_data_x = training_data[:, :self.n_dim_x] if self.n_dim_x > 1 else training_data[:, :self.n_dim_x].unsqueeze(1)
-        training_data_y = training_data[:, self.n_dim_x:] if self.n_dim_y > 1 else training_data[:, self.n_dim_x:].unsqueeze(1)
+        training_data_x = training_data[:, :self.n_dim_x] 
+        training_data_y = training_data[:, self.n_dim_x:] 
+        
         # train the model
         loss_history = flow.train(X=training_data_x,
                                 Y=training_data_y,
@@ -56,13 +59,11 @@ class SFLOW(BaseFilter):
         y_cond_transformed = scaler_y.transform(observation.reshape(1, -1))
         y_cond = torch.tensor(y_cond_transformed, dtype=torch.float32).to(device)  
         
-        n_samples = train_x.shape[0]
-
-        if prior_to_posterior:
+        if self.prior_to_posterior:
             x_start = training_data_x
         else:
-            x_start = torch.randn(sample_batch_size, 1, device=device).float()
-        # x_path = flow.sample(x_start=x_start, y_cond=y_cond, n_steps=1000)
+            x_start = torch.randn(self.ensemble_size, self.n_dim_x, device=device).float()
+        
         x_path = flow.odeint_sampler(x_start=x_start, y_cond=y_cond, n_steps=100, return_path=True)
 
         samples_final = x_path[-1].numpy()        

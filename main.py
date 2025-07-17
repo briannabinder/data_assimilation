@@ -46,7 +46,7 @@ def main():
     sflow_parser.add_argument("--width", required=False, default=256, type=int, help="Width of the network")
     sflow_parser.add_argument("--depth", required=False, default=4, type=int, help="Depth of the network")
     sflow_parser.add_argument("--activation", required=False, default="ReLU", type=str, help="Activation function")
-    sflow_parser.add_argument("--model_type", required=False, default="modelNN2", type=str, help="Model type")
+    sflow_parser.add_argument("--model_type", required=False, default="modelNN", type=str, help="Model type")
     # sflow_parser.add_argument("--device", required=False, default="ReLU", type=str, help="Activation function")
     sflow_parser.add_argument("--n_iters", required=False, default=50000, type=int, help="Number of iterations")
     # sflow_parser.add_argument("--model_type", required=False, default="modelNN2", type=str, help="Model type")
@@ -124,6 +124,7 @@ def main():
     elif filter_name == "SFLOW":
         filter_args['n_dim_x'] = model_args['global_args']['state_dim']
         filter_args['n_dim_y'] = model_args['global_args']['observation_dim']
+        filter_args['scheduler'] = 'SI'
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         filter_args['device'] = device
         filter_args['batch_size'] = int(filter_args['ensemble_size'] / 2)

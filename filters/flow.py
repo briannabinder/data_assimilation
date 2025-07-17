@@ -114,8 +114,8 @@ class Flow(nn.Module):
             assert batch_size <= int(0.5*X.shape[0]), "Batch size must be less than or equal to half the number of samples in X"
         
         self.net.train()
-        pbar = tqdm(range(n_iters), desc="Loss: ", ncols=100, colour='green')
-        for i in pbar:
+        # pbar = tqdm(range(n_iters), desc="Loss: ", ncols=100, colour='green')
+        for i in range(n_iters):
             self.net.train(mode=True)
             # randomly sample indices for the batch
             # idx = torch.randint(0, X.shape[0], (2*batch_size,)) if prior_to_posterior else torch.randint(0, X.shape[0], (batch_size,))
@@ -139,8 +139,8 @@ class Flow(nn.Module):
             loss.backward()
             optimizer.step()
             
-            if (i+1) % update_freq == 0:
-                pbar.set_description(f"Loss: {loss.item():.4f}")
+            # if (i+1) % update_freq == 0:
+            #     pbar.set_description(f"Loss: {loss.item():.4f}")
                 
             loss_history.append(loss.item())
             
