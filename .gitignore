@@ -2,12 +2,13 @@
 __pycache__/
 */__pycache__/
 **/__pycache__/
+.ipynb_checkpoints/
 
 # Experiment outputs
 exps/*/jobs/*.slurm
-exps/*/outputs/*.out
-exps/*/results/*
-exps/*/*.h5
+exps/*/logs/*.out
+exps/*/results/*.h5
+exps/*/plots/*
 
 # macOS system file
 **/.DS_Store
