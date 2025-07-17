@@ -1,6 +1,6 @@
 import argparse, h5py, yaml
-import numpy as np, ot
-# import 
+import numpy as np
+import ot
 
 def calculate_w2(states, true_states):
 
@@ -18,7 +18,7 @@ def calculate_w2(states, true_states):
             a = np.ones(N_true_samples) / N_true_samples # Uniform weights for a
             b = np.ones(ensemble_size) / ensemble_size # Uniform weights for b
             M = ot.dist(true_states[sim,t,:N_true_samples], states[sim,t])
-            w2 += np.sqrt(ot.emd2(a, b, M))
+            w2 += np.sqrt(ot.emd2(a, b, M, numItermax=1000000))
         w2_all.append(w2/num_sims)
 
     return np.mean(w2_all)

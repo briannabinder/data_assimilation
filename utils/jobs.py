@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     if job_count == 1:
         file = open(jobs_dir + f"job{job_count}.slurm", 'w')
-        print_job_header(file, logs_dir + f"log{job_count}.slurm", args.partition, args.mem)
+        print_job_header(file, logs_dir + f"log{job_count}.out", args.partition, args.mem)
         print_baseline_jobs(file, exp_id, ensemble_sizes)
         file.close()
         job_count = job_count + 1
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             for h_x_min in config['sweep_params']['kde']['h_x_mins']:
                 for h_x_max in config['sweep_params']['kde']['h_x_maxs']:
                     file = open(jobs_dir + f"job{job_count}.slurm", 'w')
-                    print_job_header(file, logs_dir + f"log{job_count}.slurm", args.partition, args.mem)
+                    print_job_header(file, logs_dir + f"log{job_count}.out", args.partition, args.mem)
                     print_kde_jobs(file, exp_id, ensemble_sizes, h_x_min, h_x_max, h_y)
                     file.close()
                     job_count = job_count + 1
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     # POSTPROCESS
     file = open(jobs_dir + f"postprocess.slurm", 'w')
-    print_job_header(file, logs_dir + f"postprocess.slurm", args.partition, args.mem)
+    print_job_header(file, logs_dir + f"postprocess.out", args.partition, args.mem)
     print_postprocess_jobs(file, exp_id)
     file.close()
 
