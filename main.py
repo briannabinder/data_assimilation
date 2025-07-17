@@ -204,7 +204,8 @@ def main():
     # ==============================================================================
     print(f"\n--- RUN DATA ASSIMILATION {'-' * 54}")
 
-    save_dir = f"./exps/{exp_id}/results/{str(filter)}/"
+    # save_dir = f"./exps/{exp_id}/results/{str(filter)}/"
+    save_dir = f"./exps/{exp_id}/results/"
     save_file_path = save_dir + f"{str(model)}_{str(filter)}_{filter_suffix}.h5"
     os.makedirs(save_dir, exist_ok=True)
 

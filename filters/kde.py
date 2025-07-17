@@ -7,7 +7,7 @@ from scipy.integrate import solve_ivp
 
 class KDE(BaseFilter):
 
-    def __str__(self): return f"KDE_{self.scheduler}"
+    def __str__(self): return f"KDE"
 
     def __init__(self, filter_args):
         
